@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import CSM from '../CSM.js'
+import CSM from '../src/CSM.js'
 
 
 describe('CSM test', function () {

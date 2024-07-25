@@ -17,6 +17,15 @@ class CSM {
       this.usuarios.set(idUsuario, { limite, streamsAgora: 0 });
     });
   }
+  
+  deletarUsuario(idUsuario) {
+    return this.mutex.runExclusive(() => {
+      if (!this.usuarios.has(idUsuario)) {
+        throw new Error('Usuario nao existe');
+      }
+      this.usuarios.delete(idUsuario);
+    });
+  }
 
   verificarLimiteUsuario(idUsuario) {
     return this.mutex.runExclusive(() => {
