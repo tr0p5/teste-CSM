@@ -1,6 +1,6 @@
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
-import env from './env.js';
+import config from './env.js';
 
 // Singleton DB
 let dbInstance = null;
@@ -13,7 +13,7 @@ async function initializeDb() {
   }
 
   dbInstance = await open({
-    filename: env.db.filename,
+    filename: config.dbPath,
     driver: sqlite3.Database
   });
 

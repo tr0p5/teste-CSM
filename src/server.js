@@ -1,4 +1,5 @@
 import express from 'express';
+import config from './config/env.js';
 import initializeDb from './config/database.js';
 import routes from './routes/routes.js';
 import logger from './log/logger.js';
@@ -10,7 +11,7 @@ import UserService from './services/userService.js';
 import UserRepository from './repositories/userRepository.js';
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = config.port;
 
 // Middleware para processar requisições com JSON
 app.use(express.json());

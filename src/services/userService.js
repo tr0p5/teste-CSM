@@ -1,9 +1,11 @@
 import logger from '../log/logger.js';
+import config from '../config/env.js';
 
 // Processa informações e aplica regras de negócio
 class UserService {
   constructor(userRepository) {
     this.userRepository = userRepository;
+    this.maxConcurrency = config.maxConcurrency;
   }
 
   //Registra usuários
@@ -13,6 +15,11 @@ class UserService {
       if (typeof limite !== 'number' || !Number.isInteger(limite) || limite < 1) {
         logger.error(`[UserService] Erro ao validar limite: limite inválido (${limite})`);
         throw new Error('O limite deve ser um número inteiro maior que 0');
+      }
+
+      if (limite > this.maxConcurrency) {
+        logger.error(`[UserService] Limite ao registrar usuário: limite (${limite}) é maior que o máximo permitido (${this.maxConcurrency})`);
+        throw new Error(`O limite de streams não pode ser maior que ${this.maxConcurrency}`);
       }
 
       // Verifica se o usuário já existe
@@ -76,10 +83,14 @@ class UserService {
   //Atualiza limite de usuário
   async updateUserLimit(idUsuario, novoLimite) {
     try {
-      // Validações de negócio
       if (typeof novoLimite !== 'number' || !Number.isInteger(novoLimite) || novoLimite < 1) {
         logger.error(`[UserService] Erro ao validar novo limite: novo limite inválido (${novoLimite})`);
         throw new Error('O novo limite deve ser um número inteiro maior que 0');
+      }
+
+      if (novoLimite > this.maxConcurrency) {
+        logger.error(`[UserService] Erro ao atualizar limite: novo limite (${novoLimite}) é maior que o máximo permitido (${this.maxConcurrency})`);
+        throw new Error(`O limite de streams não pode ser maior que ${this.maxConcurrency}`);
       }
 
       const user = await this.userRepository.getUser(idUsuario);

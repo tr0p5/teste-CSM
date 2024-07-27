@@ -2,9 +2,10 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-export default {
-  maxConcurrency: process.env.MAX_CONCURRENCY || 10,
-  db: {
-    filename: process.env.DB_FILENAME || './csm.db',
-  }
+const config = {
+  port: process.env.PORT || 3000,
+  dbPath: process.env.DB_PATH || './database.db',
+  maxConcurrency: parseInt(process.env.MAX_CONCURRENCY, 10) || 5
 };
+
+export default config;

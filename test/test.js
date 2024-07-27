@@ -5,6 +5,7 @@ import UserRepository from '../src/repositories/userRepository.js';
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
 import logger from '../src/log/logger.js';
+import config from '../src/config/env.js';
 
 describe('CSM test', function () {
   let db;
@@ -61,7 +62,7 @@ describe('CSM test', function () {
 
   // Testa o registro de um usuário
   it('should register a user', async function () {
-    const req = { body: { idUsuario: 'user1', limite: 3 } };
+    const req = { body: { idUsuario: 'user_register', limite: 3 } };
     const res = {
       status: (code) => ({
         send: (response) => {
@@ -71,7 +72,7 @@ describe('CSM test', function () {
       })
     };
     await userController.registerUser(req, res);
-    const user = await db.get('SELECT * FROM users WHERE idUsuario = ?', ['user1']);
+    const user = await db.get('SELECT * FROM users WHERE idUsuario = ?', ['user_register']);
     expect(user).to.not.be.null;
     expect(user.limite).to.equal(3);
   });
@@ -80,7 +81,7 @@ describe('CSM test', function () {
 
   // Testa o registro de um usuário já existente
   it('should handle already existent users on register', async function () {
-    const req = { body: { idUsuario: 'user1_1', limite: 3 } };
+    const req = { body: { idUsuario: 'user_registerEqual', limite: 3 } };
     const res = { status: (code) => ({ send: (response) => expect(code).to.equal(201) }) };
     await userController.registerUser(req, res);
 
@@ -100,26 +101,26 @@ describe('CSM test', function () {
 
   // Testa o início e parada de streams
   it('should start and stop streams', async function () {
-    const reqRegister = { body: { idUsuario: 'user2', limite: 2 } };
+    const reqRegister = { body: { idUsuario: 'user_startStopStream', limite: 2 } };
     const resRegister = { status: (code) => ({ send: (response) => expect(code).to.equal(201) }) };
     await userController.registerUser(reqRegister, resRegister);
 
-    const reqStartStream = { params: { idUsuario: 'user2' } };
+    const reqStartStream = { params: { idUsuario: 'user_startStopStream' } };
     const resStartStream = { status: (code) => ({ send: (response) => expect(code).to.equal(200) }) };
     await userController.startStream(reqStartStream, resStartStream);
 
-    let user = await db.get('SELECT * FROM users WHERE idUsuario = ?', ['user2']);
+    let user = await db.get('SELECT * FROM users WHERE idUsuario = ?', ['user_startStopStream']);
     expect(user.streamsAgora).to.equal(1);
 
 
     await userController.startStream(reqStartStream, resStartStream);
-    user = await db.get('SELECT * FROM users WHERE idUsuario = ?', ['user2']);
+    user = await db.get('SELECT * FROM users WHERE idUsuario = ?', ['user_startStopStream']);
     expect(user.streamsAgora).to.equal(2);
 
-    const reqStopStream = { params: { idUsuario: 'user2' } };
+    const reqStopStream = { params: { idUsuario: 'user_startStopStream' } };
     const resStopStream = { status: (code) => ({ send: (response) => expect(code).to.equal(200) }) };
     await userController.stopStream(reqStopStream, resStopStream);
-    user = await db.get('SELECT * FROM users WHERE idUsuario = ?', ['user2']);
+    user = await db.get('SELECT * FROM users WHERE idUsuario = ?', ['user_startStopStream']);
     expect(user.streamsAgora).to.equal(1);
   });
 
@@ -127,15 +128,15 @@ describe('CSM test', function () {
 
   // Testa a atualização dos limites de stream
   it('should update stream limits', async function () {
-    const reqRegister = { body: { idUsuario: 'user3', limite: 1 } };
+    const reqRegister = { body: { idUsuario: 'user_updateLimit', limite: 1 } };
     const resRegister = { status: (code) => ({ send: (response) => expect(code).to.equal(201) }) };
     await userController.registerUser(reqRegister, resRegister);
 
-    const reqUpdateLimit = { params: { idUsuario: 'user3' }, body: { novoLimite: 2 } };
+    const reqUpdateLimit = { params: { idUsuario: 'user_updateLimit' }, body: { novoLimite: 2 } };
     const resUpdateLimit = { status: (code) => ({ send: (response) => expect(code).to.equal(200) }) };
     await userController.updateUserLimit(reqUpdateLimit, resUpdateLimit);
 
-    const user = await db.get('SELECT * FROM users WHERE idUsuario = ?', ['user3']);
+    const user = await db.get('SELECT * FROM users WHERE idUsuario = ?', ['user_updateLimit']);
     expect(user.limite).to.equal(2);
   });
 
@@ -167,7 +168,7 @@ describe('CSM test', function () {
 
   // Testa limites de stream inválidos no registro
   it('should handle invalid stream limits on register', async function () {
-    const reqInvalidLimit = { body: { idUsuario: 'user4', limite: 0 } };
+    const reqInvalidLimit = { body: { idUsuario: 'user_invalidLimitC', limite: 0 } };
 
     const resError = { 
       status: (code) => ({ 
@@ -178,7 +179,7 @@ describe('CSM test', function () {
       }) 
     };
     await userController.registerUser(reqInvalidLimit, resError);
-    const reqInvalidLimit2 = { body: { idUsuario: 'user4', limite: 'NAN' } };
+    const reqInvalidLimit2 = { body: { idUsuario: 'user_invalidLimitC', limite: 'NAN' } };
     await userController.registerUser(reqInvalidLimit2, resError);
   });
 
@@ -186,11 +187,11 @@ describe('CSM test', function () {
 
   // Testa limites de stream inválidos na atualização
   it('should handle invalid stream limits on update', async function () {
-    const reqRegister = { body: { idUsuario: 'user4_1', limite: 1 } };
+    const reqRegister = { body: { idUsuario: 'user_invalidLimitU', limite: 1 } };
     const resRegister = { status: (code) => ({ send: (response) => expect(code).to.equal(201) }) };
     await userController.registerUser(reqRegister, resRegister);
 
-    const reqInvalidUpdate = { params: { idUsuario: 'user4_1' }, body: { novoLimite: 0 } };
+    const reqInvalidUpdate = { params: { idUsuario: 'user_invalidLimitU' }, body: { novoLimite: 0 } };
     const resError = { 
       status: (code) => ({ 
         send: (response) => {
@@ -200,7 +201,7 @@ describe('CSM test', function () {
       }) 
     };
     await userController.updateUserLimit(reqInvalidUpdate, resError);
-    const reqInvalidUpdate2 = { params: { idUsuario: 'user4_1' }, body: { novoLimite: 'NAN' } };
+    const reqInvalidUpdate2 = { params: { idUsuario: 'user_invalidLimitU' }, body: { novoLimite: 'NAN' } };
     await userController.updateUserLimit(reqInvalidUpdate2, resError);
   });
 
@@ -208,12 +209,12 @@ describe('CSM test', function () {
 
   // Testa se não permite mais streams do que o limite
   it('should not allow more streams than the limit', async function() {
-    const reqRegister = { body: { idUsuario: 'user5', limite: 1 } };
+    const reqRegister = { body: { idUsuario: 'user_overLimit', limite: 1 } };
     const resRegister = { status: (code) => ({ send: (response) => expect(code).to.equal(201) }) };
 
     await userController.registerUser(reqRegister, resRegister);
 
-    const reqStartStream = { params: { idUsuario: 'user5' } };
+    const reqStartStream = { params: { idUsuario: 'user_overLimit' } };
     const resStartStream = { status: (code) => ({ send: (response) => expect(code).to.equal(200) }) };
 
     await userController.startStream(reqStartStream, resStartStream);
@@ -229,7 +230,7 @@ describe('CSM test', function () {
 
     await userController.startStream(reqStartStream, resError);
 
-    const user = await db.get('SELECT * FROM users WHERE idUsuario = ?', ['user5']);
+    const user = await db.get('SELECT * FROM users WHERE idUsuario = ?', ['user_overLimit']);
     expect(user.streamsAgora).to.equal(1);
   });
 
@@ -237,12 +238,12 @@ describe('CSM test', function () {
 
   // Testa o início e parada concorrente de streams
   it('should handle concurrent stream starts and stops correctly', async function() {
-    const reqRegister = { body: { idUsuario: 'user6', limite: 2 } };
+    const reqRegister = { body: { idUsuario: 'user_concurrency', limite: 2 } };
     const resRegister = { status: (code) => ({ send: (response) => expect(code).to.equal(201) }) };
     await userController.registerUser(reqRegister, resRegister);
 
-    const reqStartStream = { params: { idUsuario: 'user6' } };
-    const reqStopStream = { params: { idUsuario: 'user6' } };
+    const reqStartStream = { params: { idUsuario: 'user_concurrency' } };
+    const reqStopStream = { params: { idUsuario: 'user_concurrency' } };
     const resSuccess = { status: (code) => ({ send: (response) => expect(code).to.equal(200) }) };
     const simulateOperation = async () => {
       await userController.startStream(reqStartStream, resSuccess);
@@ -254,47 +255,91 @@ describe('CSM test', function () {
       simulateOperation()
     ]);
 
-    const user = await db.get('SELECT * FROM users WHERE idUsuario = ?', ['user6']);
+    const user = await db.get('SELECT * FROM users WHERE idUsuario = ?', ['user_concurrency']);
     expect(user.streamsAgora).to.equal(0);
   });
+
 
 
   // Testa um grande número de operações de início e parada de streams
-  it('should handle a large number of start and stop stream operations', async function() {
+  it('should handle a large number of start and stop stream operations with different users', async function() {
     this.timeout(5000);
 
-    const reqRegister = { body: { idUsuario: 'user7', limite: 100 } };
+    const users = [];
+    for (let i = 0; i < 10; i++) {
+      const userId = `user_multiple_${i}`;
+      const reqRegister = { body: { idUsuario: userId, limite: 10 } };
+      const resRegister = { status: (code) => ({ send: (response) => expect(code).to.equal(201) }) };
+      await userController.registerUser(reqRegister, resRegister);
+      users.push(userId);
+    }
+
+    for (const userId of users) {
+      const reqStartStream = { params: { idUsuario: userId } };
+      const reqStopStream = { params: { idUsuario: userId } };
+      const resSuccess = { status: (code) => ({ send: (response) => expect(code).to.equal(200) }) };
+
+      for (let i = 0; i < 10; i++) {
+        try {
+          await userController.startStream(reqStartStream, resSuccess);
+        } catch (error) {
+          logger.error(`Erro ao iniciar stream para usuário ${userId}: ${error.message}`);
+        }
+      }
+
+      let user = await db.get('SELECT * FROM users WHERE idUsuario = ?', [userId]);
+      expect(user.streamsAgora).to.equal(10);
+
+      for (let i = 0; i < 10; i++) {
+        try {
+          await userController.stopStream(reqStopStream, resSuccess);
+        } catch (error) {
+          if (error.message !== 'Usuario com 0 streams ativas') {
+            logger.error(`Erro ao parar stream para usuário ${userId}: ${error.message}`);
+          }
+        }
+      }
+
+      user = await db.get('SELECT * FROM users WHERE idUsuario = ?', [userId]);
+      expect(user.streamsAgora).to.equal(0);
+    }
+  });
+
+
+
+  //Testa registro de limite acima do maximo
+  it('should not allow registration with a limit exceeding maxConcurrency', async function () {
+    const req = { body: { idUsuario: 'user_max', limite: config.maxConcurrency + 1 } };
+    const res = {
+      status: (code) => ({
+        send: (response) => {
+          logger.info('Response:', code, response);
+          expect(code).to.equal(400);
+          expect(response.error).to.equal(`O limite de streams não pode ser maior que ${config.maxConcurrency}`);
+        }
+      })
+    };
+    await userController.registerUser(req, res);
+  });
+
+
+
+  //Testa atualizacao de limite acima do  maximo
+  it('should not allow updating limit to a value exceeding maxConcurrency', async function () {
+    const reqRegister = { body: { idUsuario: 'user_update', limite: 1 } };
     const resRegister = { status: (code) => ({ send: (response) => expect(code).to.equal(201) }) };
     await userController.registerUser(reqRegister, resRegister);
 
-    const reqStartStream = { params: { idUsuario: 'user7' } };
-    const reqStopStream = { params: { idUsuario: 'user7' } };
-    const resSuccess = { status: (code) => ({ send: (response) => expect(code).to.equal(200) }) };
-
-    for (let i = 0; i < 100; i++) {
-      try {
-        await userController.startStream(reqStartStream, resSuccess);
-      } catch (error) {
-        logger.error(`Erro ao iniciar stream: ${error.message}`);
-      }
-    }
-
-    let user = await db.get('SELECT * FROM users WHERE idUsuario = ?', ['user7']);
-    expect(user.streamsAgora).to.equal(100);
-
-    for (let i = 0; i < 100; i++) {
-      try {
-        await userController.stopStream(reqStopStream, resSuccess);
-      } catch (error) {
-        if (error.message !== 'Usuario com 0 streams ativas') {
-          logger.error(`Erro ao parar stream: ${error.message}`);
+    const reqUpdateLimit = { params: { idUsuario: 'user_update' }, body: { novoLimite: config.maxConcurrency + 1 } };
+    const resError = {
+      status: (code) => ({
+        send: (response) => {
+          expect(code).to.equal(400);
+          expect(response.error).to.equal(`O limite de streams não pode ser maior que ${config.maxConcurrency}`);
         }
-      }
-    }
-
-    user = await db.get('SELECT * FROM users WHERE idUsuario = ?', ['user7']);
-    expect(user.streamsAgora).to.equal(0);
+      })
+    };
+    await userController.updateUserLimit(reqUpdateLimit, resError);
   });
-
 
 });
