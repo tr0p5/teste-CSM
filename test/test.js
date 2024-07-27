@@ -1,51 +1,92 @@
 import { expect } from 'chai';
-import UserController from '../src/controllers/userController.js';
-import UserService from '../src/services/userService.js';
+import createDIContainer from '../src/config/diContainer.js';
 import UserRepository from '../src/repositories/userRepository.js';
-import sqlite3 from 'sqlite3';
-import { open } from 'sqlite';
+import UserService from '../src/services/userService.js';
+import UserController from '../src/controllers/userController.js';
 import logger from '../src/log/logger.js';
-import config from '../src/config/env.js';
+
+describe('Dependency Injection Container', function () {
+  let container;
+
+  before(async () => {
+    logger.info('[Test] Inicializando contêiner de DI para testes');
+    container = await createDIContainer();
+  });
+
+  it('should create and resolve the db dependency', async function () {
+    const db = await container.resolve('db');
+    expect(db).to.not.be.undefined;
+
+    try {
+      const result = await db.get('SELECT name FROM sqlite_master WHERE type="table" AND name="users"');
+      expect(result).to.not.be.undefined;
+      expect(result.name).to.equal('users');
+      logger.info('[Test] Dependência do banco de dados resolvida e verificada com sucesso');
+    } catch (error) {
+      logger.error(`[Test] Erro ao verificar a dependência do banco de dados: ${error.message}`);
+      throw error;
+    }
+  });
+
+  it('should create and resolve the UserRepository dependency', function () {
+    const userRepository = container.resolve('userRepository');
+    expect(userRepository).to.be.instanceOf(UserRepository);
+  });
+
+  it('should create and resolve the UserService dependency', function () {
+    const userService = container.resolve('userService');
+    expect(userService).to.be.instanceOf(UserService);
+  });
+
+  it('should create and resolve the UserController dependency', function () {
+    const userController = container.resolve('userController');
+    expect(userController).to.be.instanceOf(UserController);
+  });
+});
+
 
 describe('CSM test', function () {
   let db;
-  let userRepository;
   let userController;
+  let config;
 
   before(async () => {
     try {
+      if (process.env.NODE_ENV !== 'test') {
+        throw new Error('NODE_ENV não está definido como "test".');
+      }
+      
+      const container = await createDIContainer();
 
-      // Inicializa o banco de dados em memória
+      // Verifica se o contêiner foi criado com sucesso
+      if (!container) {
+        throw new Error('Falha ao criar o contêiner de DI.');
+      }
+
+      db = await container.resolve('db');
+      userController = container.resolve('userController');
+      config = container.resolve('config');
+
+      if (typeof db.get !== 'function') {
+        throw new Error('db.get não é uma função');
+      }
+
+      // Verifica se o db foi resolvido corretamente
       if (!db) {
-        db = await open({
-          filename: ':memory:', // Utiliza um banco de dados em memória para teste
-          driver: sqlite3.Database
-        });
-
-        // Cria a tabela de usuários
-        await db.exec(`
-          CREATE TABLE IF NOT EXISTS users (
-            idUsuario TEXT PRIMARY KEY,
-            limite INTEGER NOT NULL,
-            streamsAgora INTEGER DEFAULT 0
-          )
-        `);
-
-        // Verifica se a tabela foi criada corretamente
-        const result = await db.get('SELECT name FROM sqlite_master WHERE type="table" AND name="users"');
-        if (!result) {
-          throw new Error('Tabela "users" não foi criada corretamente.');
-        }
-        logger.info('Banco de dados inicializado e verificado com sucesso.');
+        throw new Error('Falha ao resolver a dependência "db".');
       }
 
-      // Cria instâncias dos repositórios, serviços e controladores
-      if (!userRepository) {
-        userRepository = new UserRepository(db);
-        const userService = new UserService(userRepository);
-        userController = new UserController(userService);
-        logger.info('Dependências inicializadas com sucesso.');
+      // Verifica se o userController foi resolvido corretamente
+      if (!userController) {
+        throw new Error('Falha ao resolver a dependência "userController".');
       }
+
+      // Verifica se a tabela foi criada corretamente
+      const result = await db.get('SELECT name FROM sqlite_master WHERE type="table" AND name="users"');
+      if (!result) {
+        throw new Error('Tabela "users" não foi criada corretamente.');
+      }
+      logger.info('Teste iniciando. Banco de dados OK');
     } catch (error) {
       logger.error(`Erro ao inicializar o banco de dados ou criar/verificar tabela: ${error.message}`);
       throw error;
@@ -54,7 +95,9 @@ describe('CSM test', function () {
 
   // Fecha a conexão com o banco de dados após os testes
   after(async () => {
-    await db.close();
+    if (db && typeof db.close === 'function') {
+      await db.close();
+    }
   });
 
 

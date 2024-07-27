@@ -2,8 +2,9 @@ import logger from '../log/logger.js';
 
 //Processa requisicoes do usuario e delega servicos
 class UserController {
-  constructor(userService) {
+  constructor({ userService }) {
     this.userService = userService;
+    logger.info('[UserController] inicializado com sucesso.');
   }
 
   // Método para registrar um novo usuário

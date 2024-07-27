@@ -3,7 +3,7 @@ import logger from '../log/logger.js';
 
 //Camada de conexao com banco de dados
 class UserRepository {
-  constructor(db) {
+  constructor({ db }) {
     if (!db) {
       logger.error('Banco de dados não foi fornecido ao UserRepository.');
       throw new Error('Banco de dados não foi fornecido.');

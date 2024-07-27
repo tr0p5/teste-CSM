@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "mocha",
+    "test": "cross-env NODE_ENV=test && mocha",
     "start": "node src/server.js"
   },
   "keywords": [],
@@ -13,6 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "async-mutex": "^0.5.0",
+    "awilix": "^10.0.2",
     "chai": "^5.1.1",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
@@ -22,5 +23,8 @@
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "winston": "^3.13.1"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
   }
 }

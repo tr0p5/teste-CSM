@@ -1,11 +1,11 @@
 import logger from '../log/logger.js';
-import config from '../config/env.js';
 
 // Processa informações e aplica regras de negócio
 class UserService {
-  constructor(userRepository) {
+  constructor({ userRepository, config }) {
     this.userRepository = userRepository;
     this.maxConcurrency = config.maxConcurrency;
+    logger.info('[UserService] inicializado com sucesso.');
   }
 
   //Registra usuários
