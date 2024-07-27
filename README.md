@@ -27,10 +27,6 @@ Para testar, basta utilizar o comando:
 ```bash
 npm test
 ```
-ou
-```bash
-mocha
-```
 
 ## Contato
 

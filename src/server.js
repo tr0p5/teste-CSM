@@ -1,22 +1,33 @@
 import express from 'express';
-import initializeDb from './db/db.js';
+import initializeDb from './config/database.js';
 import routes from './routes/routes.js';
 import logger from './log/logger.js';
-import swaggerRouter from './swagger.js';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerDocument } from './swagger/swaggerDocs.js';
+
+import UserController from './controllers/userController.js';
+import UserService from './services/userService.js';
+import UserRepository from './repositories/userRepository.js';
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Middleware para processar requisições com JSON
 app.use(express.json());
 
-initializeDb().then(() => {
-  // Use defined routes
-  app.use('/api', routes);
-  app.use('/api', swaggerRouter);
+initializeDb().then((db) => {
+  const userRepository = new UserRepository(db);
+  const userService = new UserService(userRepository);
+  const userController = new UserController(userService);
 
+  // Define as rotas da aplicação
+  app.use('/api', routes(userController));
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+  // Inicia o servidor
   app.listen(port, () => {
-    logger.info(`Servidor rodando na porta ${port}`);
+    logger.info(`[Server] Servidor rodando na porta ${port}`);
   });
 }).catch(err => {
-  logger.error('Erro ao inicializar o banco de dados', err);
+  logger.error('[Server] Erro ao inicializar o banco de dados', err);
 });

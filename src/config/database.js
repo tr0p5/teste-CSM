@@ -1,15 +1,19 @@
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
+import env from './env.js';
 
-//Singleton DB
+// Singleton DB
 let dbInstance = null;
 
 async function initializeDb() {
+
+  //Garante unica instancia
   if (dbInstance) {
     return dbInstance;
   }
+
   dbInstance = await open({
-    filename: './csm.db',
+    filename: env.db.filename,
     driver: sqlite3.Database
   });
 
